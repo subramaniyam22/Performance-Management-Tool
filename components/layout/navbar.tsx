@@ -34,10 +34,10 @@ import { getRoleLabel } from "@/lib/utils";
 interface NavbarProps {
     user: {
         id: string;
-        name: string | null;
-        email: string | null;
+        name?: string | null;
+        email?: string | null;
         role: UserRole;
-        photoUrl: string | null;
+        photoUrl?: string | null;
     };
 }
 
