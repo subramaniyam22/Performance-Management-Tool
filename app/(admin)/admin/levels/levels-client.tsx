@@ -40,18 +40,14 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
     const [error, setError] = useState("");
 
     const [role, setRole] = useState("");
-    const [level, setLevel] = useState("");
-    const [expectations, setExpectations] = useState("");
-    const [criteria, setCriteria] = useState("");
-    const [minTenureMonths, setMinTenureMonths] = useState("");
+    const [levelName, setLevelName] = useState("");
+    const [expectationsText, setExpectationsText] = useState("");
 
     const handleCreate = () => {
         setSelectedFramework(null);
         setRole("");
-        setLevel("");
-        setExpectations("");
-        setCriteria("");
-        setMinTenureMonths("");
+        setLevelName("");
+        setExpectationsText("");
         setError("");
         setDialogOpen(true);
     };
@@ -59,10 +55,8 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
     const handleEdit = (framework: LevelFramework) => {
         setSelectedFramework(framework);
         setRole(framework.role);
-        setLevel(framework.level);
-        setExpectations(framework.expectations);
-        setCriteria(framework.criteria);
-        setMinTenureMonths(framework.minTenureMonths?.toString() || "");
+        setLevelName(framework.levelName);
+        setExpectationsText(framework.expectationsText);
         setError("");
         setDialogOpen(true);
     };
@@ -76,18 +70,14 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
             let result;
             if (selectedFramework) {
                 result = await updateLevelFramework(selectedFramework.id, {
-                    level,
-                    expectations,
-                    criteria,
-                    minTenureMonths: minTenureMonths ? parseInt(minTenureMonths) : undefined,
+                    levelName,
+                    expectationsText,
                 });
             } else {
                 result = await createLevelFramework({
                     role,
-                    level,
-                    expectations,
-                    criteria,
-                    minTenureMonths: minTenureMonths ? parseInt(minTenureMonths) : undefined,
+                    levelName,
+                    expectationsText,
                 });
             }
 
@@ -107,7 +97,7 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
     };
 
     const handleDelete = async (framework: LevelFramework) => {
-        if (!confirm(`Are you sure you want to delete level "${framework.level}" for ${framework.role}?`)) return;
+        if (!confirm(`Are you sure you want to delete level "${framework.levelName}" for ${framework.role}?`)) return;
 
         const result = await deleteLevelFramework(framework.id);
         if (result.success) {
@@ -146,15 +136,8 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
                                             <div className="flex-1">
                                                 <CardTitle className="flex items-center gap-2">
                                                     <GraduationCap className="h-5 w-5" />
-                                                    {framework.level}
+                                                    {framework.levelName}
                                                 </CardTitle>
-                                                <CardDescription className="mt-2">
-                                                    {framework.minTenureMonths && (
-                                                        <Badge variant="outline">
-                                                            Min. {framework.minTenureMonths} months
-                                                        </Badge>
-                                                    )}
-                                                </CardDescription>
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button size="sm" variant="outline" onClick={() => handleEdit(framework)}>
@@ -175,13 +158,7 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
                                         <div>
                                             <h4 className="text-sm font-semibold mb-2">Expectations</h4>
                                             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                                {framework.expectations}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <h4 className="text-sm font-semibold mb-2">Criteria</h4>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                                {framework.criteria}
+                                                {framework.expectationsText}
                                             </p>
                                         </div>
                                     </CardContent>
@@ -221,20 +198,21 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
                                         <SelectValue placeholder="Select role..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="DEVELOPER">Developer (WIS)</SelectItem>
-                                        <SelectItem value="QC_ENGINEER">QC Engineer</SelectItem>
-                                        <SelectItem value="PC_ENGINEER">PC Engineer</SelectItem>
+                                        <SelectItem value="WIS">WIS</SelectItem>
+                                        <SelectItem value="QC">QC</SelectItem>
+                                        <SelectItem value="PC">PC</SelectItem>
+                                        <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
                                         <SelectItem value="ADMIN">Admin</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="level">Level *</Label>
+                                <Label htmlFor="levelName">Level Name *</Label>
                                 <Input
-                                    id="level"
-                                    value={level}
-                                    onChange={(e) => setLevel(e.target.value)}
+                                    id="levelName"
+                                    value={levelName}
+                                    onChange={(e) => setLevelName(e.target.value)}
                                     placeholder="e.g., Senior Developer"
                                     required
                                     disabled={loading}
@@ -243,38 +221,13 @@ export function LevelsClient({ frameworks: initialFrameworks, roles }: LevelsCli
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="minTenureMonths">Minimum Tenure (months)</Label>
-                            <Input
-                                id="minTenureMonths"
-                                type="number"
-                                value={minTenureMonths}
-                                onChange={(e) => setMinTenureMonths(e.target.value)}
-                                placeholder="e.g., 24"
-                                disabled={loading}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="expectations">Expectations *</Label>
+                            <Label htmlFor="expectationsText">Expectations *</Label>
                             <Textarea
-                                id="expectations"
-                                value={expectations}
-                                onChange={(e) => setExpectations(e.target.value)}
+                                id="expectationsText"
+                                value={expectationsText}
+                                onChange={(e) => setExpectationsText(e.target.value)}
                                 placeholder="Describe what's expected at this level..."
-                                rows={4}
-                                required
-                                disabled={loading}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="criteria">Criteria *</Label>
-                            <Textarea
-                                id="criteria"
-                                value={criteria}
-                                onChange={(e) => setCriteria(e.target.value)}
-                                placeholder="Define specific criteria for reaching this level..."
-                                rows={4}
+                                rows={6}
                                 required
                                 disabled={loading}
                             />
