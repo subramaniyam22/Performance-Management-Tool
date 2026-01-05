@@ -17,6 +17,24 @@ import { generateEvidenceSuggestion, generateLevelGuidance } from "../lib/ai";
 import { sendEvidenceReminderEmail } from "../lib/email";
 import { isWithinQuietHours } from "../lib/utils";
 
+// Helper function to convert rating to numeric score
+function ratingToScore(rating: string): number {
+    switch (rating) {
+        case "OUTSTANDING":
+            return 5;
+        case "EXCEEDS_EXPECTATIONS":
+            return 4;
+        case "MEETS_EXPECTATIONS":
+            return 3;
+        case "IMPROVEMENT_NEEDED":
+            return 2;
+        case "DOES_NOT_MEET":
+            return 1;
+        default:
+            return 0;
+    }
+}
+
 async function generateNightlyInsights() {
     console.log("Starting nightly insights generation...");
 
@@ -141,23 +159,6 @@ async function generateNightlyInsights() {
                 .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
             if (allRatings.length >= 3) {
-                const ratingToScore = (rating: string): number => {
-                    switch (rating) {
-                        case "OUTSTANDING":
-                            return 5;
-                        case "EXCEEDS_EXPECTATIONS":
-                            return 4;
-                        case "MEETS_EXPECTATIONS":
-                            return 3;
-                        case "IMPROVEMENT_NEEDED":
-                            return 2;
-                        case "DOES_NOT_MEET":
-                            return 1;
-                        default:
-                            return 0;
-                    }
-                };
-
                 const recentScores: number[] = allRatings.slice(-3).map((r) => ratingToScore(r.rating));
                 const avgRecent = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
 
