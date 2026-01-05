@@ -24,19 +24,19 @@ export async function requestPasswordReset(data: z.infer<typeof forgotPasswordSc
 
         // Generate reset token
         const token = randomBytes(32).toString("hex");
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
         // Delete any existing tokens for this user
         await prisma.passwordResetToken.deleteMany({
-            where: { userId: user.id },
+            where: { email: user.email },
         });
 
         // Create new token
         await prisma.passwordResetToken.create({
             data: {
-                userId: user.id,
+                email: user.email,
                 token,
-                expiresAt,
+                expires,
             },
         });
 
@@ -66,16 +66,24 @@ export async function resetPassword(data: z.infer<typeof resetPasswordSchema>) {
 
         const resetToken = await prisma.passwordResetToken.findUnique({
             where: { token: validated.token },
-            include: { user: true },
         });
 
         if (!resetToken) {
             return { success: false, error: "Invalid or expired reset token" };
         }
 
-        if (resetToken.expiresAt < new Date()) {
+        if (resetToken.expires < new Date()) {
             await prisma.passwordResetToken.delete({ where: { id: resetToken.id } });
             return { success: false, error: "Reset token has expired" };
+        }
+
+        // Find user by email
+        const user = await prisma.user.findUnique({
+            where: { email: resetToken.email },
+        });
+
+        if (!user) {
+            return { success: false, error: "User not found" };
         }
 
         // Hash new password
@@ -83,7 +91,7 @@ export async function resetPassword(data: z.infer<typeof resetPasswordSchema>) {
 
         // Update user password
         await prisma.user.update({
-            where: { id: resetToken.userId },
+            where: { id: user.id },
             data: { passwordHash },
         });
 
