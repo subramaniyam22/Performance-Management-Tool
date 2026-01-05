@@ -100,7 +100,7 @@ export function calculateEvidenceScore(goals: GoalWithRating[]): {
     }
 
     // Recency: Average days since last evidence (max 30 days)
-    const recencyScores = activeGoals.map((goal) => {
+    const recencyScores: number[] = activeGoals.map((goal) => {
         if (!goal.lastEvidenceDate) return 0;
         const days = daysAgo(goal.lastEvidenceDate);
         if (days === 0) return 1.0;
@@ -113,7 +113,7 @@ export function calculateEvidenceScore(goals: GoalWithRating[]): {
     recencyScore = recencyScores.reduce((a, b) => a + b, 0) / activeGoals.length;
 
     // Completeness: Evidence count per goal (target: at least 3)
-    const completenessScores = activeGoals.map((goal) => {
+    const completenessScores: number[] = activeGoals.map((goal) => {
         if (goal.evidenceCount === 0) return 0;
         if (goal.evidenceCount >= 5) return 1.0;
         if (goal.evidenceCount >= 3) return 0.8;
@@ -124,7 +124,7 @@ export function calculateEvidenceScore(goals: GoalWithRating[]): {
         completenessScores.reduce((a, b) => a + b, 0) / activeGoals.length;
 
     // Quality: Presence of metrics and links
-    const qualityScores = activeGoals.map((goal) => {
+    const qualityScores: number[] = activeGoals.map((goal) => {
         let score = 0.5; // Base score for having evidence
         if (goal.hasMetrics) score += 0.25;
         if (goal.hasLinks) score += 0.25;
