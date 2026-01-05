@@ -56,6 +56,7 @@ export const updateUserSchema = z.object({
 export const createTeamSchema = z.object({
     name: z.string().min(2, "Team name must be at least 2 characters"),
     description: z.string().optional(),
+    memberIds: z.array(z.string()).optional(),
 });
 
 export const updateTeamSchema = z.object({
