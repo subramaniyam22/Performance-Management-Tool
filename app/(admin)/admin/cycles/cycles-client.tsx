@@ -146,7 +146,7 @@ export function CyclesClient({ cycles: initialCycles }: CyclesClientProps) {
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">End:</span>{" "}
-                                    {formatDate(cycle.endAt)}
+                                    {cycle.endAt ? formatDate(cycle.endAt) : "Not set"}
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Assignments:</span>{" "}
