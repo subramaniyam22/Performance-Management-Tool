@@ -59,8 +59,9 @@ async function generateNightlyInsights() {
 
             // Skip if in quiet hours
             if (
-                prefs?.quietHoursStart !== null &&
-                prefs?.quietHoursEnd !== null &&
+                prefs &&
+                prefs.quietHoursStart !== null &&
+                prefs.quietHoursEnd !== null &&
                 isWithinQuietHours(prefs.quietHoursStart, prefs.quietHoursEnd)
             ) {
                 console.log(`Skipping ${user.name} - in quiet hours`);
