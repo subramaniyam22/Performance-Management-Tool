@@ -29,7 +29,7 @@ export async function createEvidence(data: z.infer<typeof createEvidenceSchema>)
                 goalAssignmentId: validated.goalAssignmentId,
                 userId: session.user.id,
                 text: validated.text,
-                links: validated.links || [],
+                links: JSON.stringify(validated.links || []),
                 attachmentsJson: validated.attachmentsJson,
             },
         });
