@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { loginSchema } from "@/lib/validations";
 import { UserRole, UserStatus } from "@prisma/client";
 import type { Adapter } from "next-auth/adapters";
@@ -42,7 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         throw new Error("Account is inactive");
                     }
 
-                    const isValidPassword = await argon2.verify(user.passwordHash, password);
+                    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
 
                     if (!isValidPassword) {
                         return null;

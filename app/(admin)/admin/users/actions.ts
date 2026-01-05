@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/rbac";
 import { createUserSchema, updateUserSchema } from "@/lib/validations";
 import { createAuditLog } from "@/lib/audit";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -26,7 +26,7 @@ export async function createUser(data: z.infer<typeof createUserSchema>) {
             return { success: false, error: "Email already exists" };
         }
 
-        const passwordHash = await argon2.hash(validated.password);
+        const passwordHash = await bcrypt.hash(validated.password, 12);
 
         const user = await prisma.user.create({
             data: {

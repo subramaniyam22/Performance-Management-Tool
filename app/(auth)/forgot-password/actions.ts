@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations";
 import { z } from "zod";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 
 export async function requestPasswordReset(data: z.infer<typeof forgotPasswordSchema>) {
@@ -87,7 +87,7 @@ export async function resetPassword(data: z.infer<typeof resetPasswordSchema>) {
         }
 
         // Hash new password
-        const passwordHash = await argon2.hash(validated.password);
+        const passwordHash = await bcrypt.hash(validated.password, 12);
 
         // Update user password
         await prisma.user.update({

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/validations";
 import { z } from "zod";
 
@@ -19,7 +19,7 @@ export async function registerUser(data: z.infer<typeof registerSchema>) {
         }
 
         // Hash password
-        const passwordHash = await argon2.hash(validated.password);
+        const passwordHash = await bcrypt.hash(validated.password, 12);
 
         // Create user
         await prisma.user.create({
