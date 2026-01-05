@@ -141,25 +141,27 @@ async function generateNightlyInsights() {
                 .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
             if (allRatings.length >= 3) {
-                const ratingToScore = (rating: string) => {
+                const ratingToScore = (rating: string): number => {
                     switch (rating) {
+                        case "OUTSTANDING":
+                            return 5;
                         case "EXCEEDS_EXPECTATIONS":
                             return 4;
                         case "MEETS_EXPECTATIONS":
                             return 3;
-                        case "BELOW_EXPECTATIONS":
+                        case "IMPROVEMENT_NEEDED":
                             return 2;
-                        case "NEEDS_IMPROVEMENT":
+                        case "DOES_NOT_MEET":
                             return 1;
                         default:
                             return 0;
                     }
                 };
 
-                const recentScores = allRatings.slice(-3).map((r) => ratingToScore(r.rating));
+                const recentScores: number[] = allRatings.slice(-3).map((r) => ratingToScore(r.rating));
                 const avgRecent = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
 
-                const olderScores = allRatings
+                const olderScores: number[] = allRatings
                     .slice(0, -3)
                     .slice(-3)
                     .map((r) => ratingToScore(r.rating));
