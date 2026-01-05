@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
         setLoading(false);
 
         // In development, show the token
-        if (result.token) {
+        if ("token" in result && result.token) {
             setDevToken(result.token);
         }
     };
