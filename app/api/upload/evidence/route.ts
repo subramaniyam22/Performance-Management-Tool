@@ -72,13 +72,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Update evidence with attachment URL
-        const currentAttachments = (evidence.attachmentsJson as string[] | null) || [];
-        await prisma.evidenceLog.update({
-            where: { id: evidenceId },
-            data: {
-                attachmentsJson: [...currentAttachments, uploadResult.url],
-            },
-        });
+        if (uploadResult.url) {
+            const currentAttachments = (evidence.attachmentsJson as string[] | null) || [];
+            await prisma.evidenceLog.update({
+                where: { id: evidenceId },
+                data: {
+                    attachmentsJson: [...currentAttachments, uploadResult.url] as string[],
+                },
+            });
+        }
 
         return NextResponse.json({
             success: true,
