@@ -88,10 +88,25 @@ async function generateWeeklySummaries() {
                 },
             });
 
-            const scores = allUsers.map((u) => ({
-                userId: u.id,
-                score: calculateUserScore(u.goalAssignments).totalScore,
-            }));
+            const scores = allUsers.map((u) => {
+                const goals = u.goalAssignments.map((ga) => ({
+                    goalId: ga.goalId,
+                    goalTitle: ga.goal.title,
+                    weightage: ga.goal.weightage,
+                    rating: ga.ratings[0]?.rating,
+                    lastEvidenceDate: ga.evidenceLogs[0]?.createdAt,
+                    evidenceCount: ga.evidenceLogs.length,
+                    hasMetrics: ga.evidenceLogs.some((e) => /\d+/.test(e.text)),
+                    hasLinks: ga.evidenceLogs.some((e) => e.links && e.links.length > 0),
+                }));
+                const ratingHistory = u.goalAssignments.flatMap((ga) =>
+                    ga.ratings.map((r) => ({ rating: r.rating, createdAt: r.createdAt }))
+                );
+                return {
+                    userId: u.id,
+                    score: calculateUserScore(goals, ratingHistory).totalScore,
+                };
+            });
             scores.sort((a, b) => b.score - a.score);
             const rank = scores.findIndex((s) => s.userId === user.id) + 1;
 
@@ -99,12 +114,10 @@ async function generateWeeklySummaries() {
             const topEvidence = user.goalAssignments
                 .flatMap((ga) => ga.evidenceLogs)
                 .sort((a, b) => {
-                    const aScore =
-                        (a.metrics ? Object.keys(a.metrics).length : 0) +
-                        (a.supportingLinks?.length || 0);
-                    const bScore =
-                        (b.metrics ? Object.keys(b.metrics).length : 0) +
-                        (b.supportingLinks?.length || 0);
+                    const aLinks = a.links ? JSON.parse(a.links) : [];
+                    const bLinks = b.links ? JSON.parse(b.links) : [];
+                    const aScore = (/\d+/.test(a.text) ? 1 : 0) + aLinks.length;
+                    const bScore = (/\d+/.test(b.text) ? 1 : 0) + bLinks.length;
                     return bScore - aScore;
                 })[0];
 
