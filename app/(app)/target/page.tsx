@@ -51,13 +51,15 @@ export default async function TargetPage() {
         ratingsData.length > 0
             ? ratingsData.reduce((sum, r) => {
                 const score =
-                    r.rating === "EXCEEDS_EXPECTATIONS"
-                        ? 4
-                        : r.rating === "MEETS_EXPECTATIONS"
-                            ? 3
-                            : r.rating === "BELOW_EXPECTATIONS"
-                                ? 2
-                                : 1;
+                    r.rating === "OUTSTANDING"
+                        ? 5
+                        : r.rating === "EXCEEDS_EXPECTATIONS"
+                            ? 4
+                            : r.rating === "MEETS_EXPECTATIONS"
+                                ? 3
+                                : r.rating === "IMPROVEMENT_NEEDED"
+                                    ? 2
+                                    : 1;
                 return sum + score;
             }, 0) / ratingsData.length
             : 0;
