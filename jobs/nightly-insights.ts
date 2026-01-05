@@ -217,16 +217,27 @@ async function generateNightlyInsights() {
 
             // Store insights in database
             if (insights.length > 0) {
+                // Determine the primary insight type
+                const hasEvidenceGap = insights.some((i) => i.includes("Evidence gap"));
+                const hasQualityIssue = insights.some((i) => i.includes("quality"));
+                const hasTrendImproving = insights.some((i) => i.includes("improving"));
+                const hasTrendDeclining = insights.some((i) => i.includes("declining"));
+                
+                const insightType = hasEvidenceGap
+                    ? "EVIDENCE_GAP"
+                    : hasQualityIssue
+                        ? "EVIDENCE_QUALITY"
+                        : hasTrendImproving
+                            ? "TREND_IMPROVING"
+                            : hasTrendDeclining
+                                ? "TREND_DECLINING"
+                                : "APPRECIATION";
+
                 await prisma.aIInsight.create({
                     data: {
                         userId: user.id,
-                        insightType: "NIGHTLY_SUMMARY",
+                        type: insightType,
                         content: insights.join("\n\n"),
-                        metadata: {
-                            evidenceGaps: insights.filter((i) => i.includes("Evidence gap")).length,
-                            qualityIssues: insights.filter((i) => i.includes("quality")).length,
-                            trends: insights.filter((i) => i.includes("Trend")).length,
-                        },
                     },
                 });
 
