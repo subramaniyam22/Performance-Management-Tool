@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma";
 import * as argon2 from "argon2";
 import { loginSchema } from "@/lib/validations";
 import { UserRole, UserStatus } from "@prisma/client";
+import type { Adapter } from "next-auth/adapters";
 
 const SESSION_MAX_AGE = parseInt(process.env.SESSION_MAX_AGE || "21600"); // 6 hours in seconds
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    adapter: PrismaAdapter(prisma),
+    adapter: PrismaAdapter(prisma) as Adapter,
     session: {
         strategy: "jwt",
         maxAge: SESSION_MAX_AGE,
