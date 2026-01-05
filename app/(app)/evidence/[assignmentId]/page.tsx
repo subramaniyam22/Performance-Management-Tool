@@ -150,32 +150,35 @@ export default async function EvidencePage({ params }: { params: Promise<{ assig
                         </p>
                     ) : (
                         <div className="space-y-4">
-                            {assignment.evidenceLogs.map((evidence) => (
-                                <div key={evidence.id} className="border-l-2 border-primary pl-4 pb-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-muted-foreground">
-                                            {formatDateTime(evidence.createdAt)}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm whitespace-pre-wrap mb-2">{evidence.text}</p>
-                                    {evidence.links.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
-                                            {evidence.links.map((link, idx) => (
-                                                <a
-                                                    key={idx}
-                                                    href={link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs text-primary hover:underline flex items-center gap-1"
-                                                >
-                                                    <LinkIcon className="h-3 w-3" />
-                                                    Link {idx + 1}
-                                                </a>
-                                            ))}
+                            {assignment.evidenceLogs.map((evidence) => {
+                                const links: string[] = evidence.links ? JSON.parse(evidence.links) : [];
+                                return (
+                                    <div key={evidence.id} className="border-l-2 border-primary pl-4 pb-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm text-muted-foreground">
+                                                {formatDateTime(evidence.createdAt)}
+                                            </span>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+                                        <p className="text-sm whitespace-pre-wrap mb-2">{evidence.text}</p>
+                                        {links.length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {links.map((link, idx) => (
+                                                    <a
+                                                        key={idx}
+                                                        href={link}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                                                    >
+                                                        <LinkIcon className="h-3 w-3" />
+                                                        Link {idx + 1}
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </CardContent>
