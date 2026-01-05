@@ -59,7 +59,7 @@ export function CyclesClient({ cycles: initialCycles }: CyclesClientProps) {
         setLabel(cycle.label);
         setType(cycle.type);
         setStartAt(cycle.startAt.toISOString().split("T")[0]);
-        setEndAt(cycle.endAt.toISOString().split("T")[0]);
+        setEndAt(cycle.endAt ? cycle.endAt.toISOString().split("T")[0] : "");
         setError("");
         setDialogOpen(true);
     };
