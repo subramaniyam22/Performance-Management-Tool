@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
         const userContext = {
             name: user.name,
             role: user.role,
-            currentLevel: levelSnapshot?.currentLevel,
-            nextLevel: levelSnapshot?.nextLevel,
+            currentLevel: levelSnapshot?.currentLevel ?? undefined,
+            nextLevel: levelSnapshot?.nextLevel ?? undefined,
             goals: user.goalAssignments.map((ga) => ({
                 title: ga.goal.title,
                 rating: ga.ratings[0]?.rating,
