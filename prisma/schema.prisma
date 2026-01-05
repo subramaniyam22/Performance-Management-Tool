@@ -1,0 +1,481 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  ADMIN
+  SUPERVISOR
+  WIS
+  QC
+  PC
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+enum CycleType {
+  QUARTER
+  HALF
+  YEAR
+}
+
+enum Rating {
+  DOES_NOT_MEET
+  IMPROVEMENT_NEEDED
+  MEETS_EXPECTATIONS
+  EXCEEDS_EXPECTATIONS
+  OUTSTANDING
+}
+
+enum GoalAssignmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AIInsightType {
+  EVIDENCE_GAP
+  EVIDENCE_QUALITY
+  TREND_IMPROVING
+  TREND_DECLINING
+  APPRECIATION
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  ASSIGN_GOAL
+  SUBMIT_RATING
+  CHANGE_ROLE
+  APPROVE_RATING
+  REQUEST_RATING_CHANGE
+  APPROVE_CHANGE_REQUEST
+  REJECT_CHANGE_REQUEST
+}
+
+// ============================================
+// AUTHENTICATION & USERS
+// ============================================
+
+model User {
+  id            String      @id @default(cuid())
+  name          String
+  email         String      @unique
+  passwordHash  String
+  role          UserRole    @default(WIS)
+  status        UserStatus  @default(ACTIVE)
+  targetRating  Rating?     // User's target performance rating
+  photoUrl      String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Supervisor relationship
+  supervisorId  String?
+  supervisor    User?       @relation("SupervisorTeam", fields: [supervisorId], references: [id])
+  teamMembers   User[]      @relation("SupervisorTeam")
+
+  // Relations
+  accounts              Account[]
+  sessions              Session[]
+  teamMemberships       TeamMember[]
+  goalAssignments       GoalAssignment[]
+  evidenceLogs          EvidenceLog[]
+  ratingsGiven          RatingEvent[]        @relation("RaterRelation")
+  goalsCreated          Goal[]               @relation("GoalCreator")
+  goalsAssignedByMe     GoalAssignment[]     @relation("AssignedBy")
+  levelSnapshots        UserLevelSnapshot[]
+  notificationPreferences NotificationPreference?
+  aiInsights            AIInsight[]
+  auditLogs             AuditLog[]           @relation("AuditActor")
+  subTargetApprovals    SubTargetApproval[]
+  
+  // Rating approval relations
+  approvedRatings       RatingEvent[]        @relation("RatingApprovals")
+  requestedChanges      RatingChangeRequest[] @relation("RequestedChanges")
+  reviewedChanges       RatingChangeRequest[] @relation("ReviewedChanges")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([supervisorId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? 
+  access_token      String? 
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? 
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+// ============================================
+// ORGANIZATION STRUCTURE
+// ============================================
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members TeamMember[]
+
+  @@index([name])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@index([teamId])
+}
+
+// ============================================
+// PERFORMANCE MANAGEMENT
+// ============================================
+
+model Cycle {
+  id        String     @id @default(cuid())
+  type      CycleType
+  label     String
+  startAt   DateTime
+  endAt     DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  goalAssignments GoalAssignment[]
+  aiInsights      AIInsight[]
+
+  @@index([type])
+  @@index([startAt])
+}
+
+model Goal {
+  id              String   @id @default(cuid())
+  title           String
+  weightage       Float
+  description     String   
+  isActive        Boolean  @default(true)
+  createdByAdminId String
+  createdByRole   UserRole @default(ADMIN)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Sub-target relationship
+  parentGoalId    String?
+  isSubTarget     Boolean  @default(false)
+  parentGoal      Goal?    @relation("GoalSubTargets", fields: [parentGoalId], references: [id], onDelete: Cascade)
+  subTargets      Goal[]   @relation("GoalSubTargets")
+
+  createdBy       User                  @relation("GoalCreator", fields: [createdByAdminId], references: [id])
+  fieldDefinitions GoalFieldDefinition[]
+  assignments     GoalAssignment[]
+
+  @@index([createdByAdminId])
+  @@index([isActive])
+  @@index([parentGoalId])
+}
+
+model GoalFieldDefinition {
+  id        String   @id @default(cuid())
+  goalId    String
+  key       String
+  label     String
+  fieldType String   // text, number, url, select, etc.
+  required  Boolean  @default(false)
+  options   Json?    // For select fields
+  createdAt DateTime @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, key])
+  @@index([goalId])
+}
+
+model GoalAssignment {
+  id               String                @id @default(cuid())
+  goalId           String
+  userId           String
+  cycleId          String
+  assignedByAdminId String
+  startAt          DateTime              @default(now())
+  dueAt            DateTime?
+  status           GoalAssignmentStatus  @default(ACTIVE)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  goal         Goal             @relation(fields: [goalId], references: [id])
+  user         User             @relation(fields: [userId], references: [id])
+  cycle        Cycle            @relation(fields: [cycleId], references: [id])
+  assignedBy   User             @relation("AssignedBy", fields: [assignedByAdminId], references: [id])
+  fieldValues  GoalFieldValue[]
+  evidenceLogs EvidenceLog[]
+  ratings      RatingEvent[]
+
+  @@index([goalId])
+  @@index([userId])
+  @@index([cycleId])
+  @@index([assignedByAdminId])
+  @@index([status])
+}
+
+model GoalFieldValue {
+  id               String   @id @default(cuid())
+  goalAssignmentId String
+  key              String
+  value            String   
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  goalAssignment GoalAssignment @relation(fields: [goalAssignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([goalAssignmentId, key])
+  @@index([goalAssignmentId])
+}
+
+model EvidenceLog {
+  id               String   @id @default(cuid())
+  goalAssignmentId String
+  userId           String
+  text             String   
+  links            String // Array of URLs
+  attachmentsJson  Json?    // Metadata for attachments
+  createdAt        DateTime @default(now())
+
+  goalAssignment GoalAssignment @relation(fields: [goalAssignmentId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id])
+
+  @@index([goalAssignmentId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RatingEvent {
+  id               String   @id @default(cuid())
+  goalAssignmentId String
+  ratedByAdminId   String
+  rating           Rating
+  notes            String?  
+  createdAt        DateTime @default(now())
+  
+  // Approval tracking
+  isApproved         Boolean   @default(false)
+  approvedAt         DateTime?
+  approvedByUserId   String?
+  
+  goalAssignment GoalAssignment @relation(fields: [goalAssignmentId], references: [id], onDelete: Cascade)
+  ratedBy        User           @relation("RaterRelation", fields: [ratedByAdminId], references: [id])
+  approvedBy     User?          @relation("RatingApprovals", fields: [approvedByUserId], references: [id])
+  changeRequests RatingChangeRequest[]
+
+  @@index([goalAssignmentId])
+  @@index([ratedByAdminId])
+  @@index([createdAt])
+  @@index([approvedByUserId])
+}
+
+model RatingChangeRequest {
+  id                String   @id @default(cuid())
+  ratingEventId     String
+  requestedByUserId String
+  reason            String   
+  status            ChangeRequestStatus @default(PENDING)
+  reviewedByUserId  String?
+  reviewedAt        DateTime?
+  reviewNotes       String?  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  ratingEvent  RatingEvent @relation(fields: [ratingEventId], references: [id], onDelete: Cascade)
+  requestedBy  User        @relation("RequestedChanges", fields: [requestedByUserId], references: [id])
+  reviewedBy   User?       @relation("ReviewedChanges", fields: [reviewedByUserId], references: [id])
+  
+  @@index([ratingEventId])
+  @@index([requestedByUserId])
+  @@index([status])
+  @@index([reviewedByUserId])
+}
+
+// ============================================
+// CAREER PROGRESSION
+// ============================================
+
+model LevelFramework {
+  id              String   @id @default(cuid())
+  role            UserRole
+  levelName       String
+  expectationsText String  
+  expectationsJson Json?   // Structured expectations
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([role, levelName])
+  @@index([role])
+}
+
+model UserLevelSnapshot {
+  id            String   @id @default(cuid())
+  userId        String
+  currentLevel  String
+  nextLevel     String?
+  tenureMonths  Int?
+  rationale     String?  
+  computedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([computedAt])
+}
+
+// ============================================
+// NOTIFICATIONS & INSIGHTS
+// ============================================
+
+model NotificationPreference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  emailEnabled      Boolean  @default(true)
+  reminderFrequency String   @default("weekly") // daily, weekly, none
+  quietHoursStart   Int?     // Hour 0-23
+  quietHoursEnd     Int?     // Hour 0-23
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AIInsight {
+  id        String         @id @default(cuid())
+  userId    String
+  cycleId   String?
+  type      AIInsightType
+  content   String         
+  expiresAt DateTime?
+  createdAt DateTime       @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycle Cycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([cycleId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ============================================
+// AUDIT & COMPLIANCE
+// ============================================
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  actorUserId String
+  action      AuditAction
+  entityType  String
+  entityId    String
+  beforeJson  Json?
+  afterJson   Json?
+  createdAt   DateTime    @default(now())
+
+  actor User @relation("AuditActor", fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+// ============================================
+// SUB-TARGET APPROVALS
+// ============================================
+
+model SubTargetApproval {
+  id              String   @id @default(cuid())
+  userId          String
+  goalId          String
+  requestedCount  Int      // Number of sub-targets requested
+  reason          String?  
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([goalId])
+  @@index([status])
+}
+
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
