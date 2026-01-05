@@ -5,22 +5,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Rating } from "@prisma/client";
 
-type Rating = "MEETS_EXPECTATIONS" | "EXCEEDS_EXPECTATIONS" | "OUTSTANDING";
+type TargetRating = "MEETS_EXPECTATIONS" | "EXCEEDS_EXPECTATIONS" | "OUTSTANDING";
 
 interface TargetSelectorProps {
     initialTarget?: Rating | null;
 }
 
 export function TargetSelector({ initialTarget }: TargetSelectorProps) {
-    const [selectedRating, setSelectedRating] = useState<Rating | null>(initialTarget || null);
+    const [selectedRating, setSelectedRating] = useState<TargetRating | null>(
+        initialTarget && ["MEETS_EXPECTATIONS", "EXCEEDS_EXPECTATIONS", "OUTSTANDING"].includes(initialTarget)
+            ? (initialTarget as TargetRating)
+            : null
+    );
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const router = useRouter();
 
     const ratings = [
         {
-            value: "OUTSTANDING" as Rating,
+            value: "OUTSTANDING" as TargetRating,
             label: "Outstanding",
             description: "Consistently delivers exceptional, innovative results",
             colorClass: "purple",
@@ -29,7 +34,7 @@ export function TargetSelector({ initialTarget }: TargetSelectorProps) {
             textColor: "text-purple-600",
         },
         {
-            value: "EXCEEDS_EXPECTATIONS" as Rating,
+            value: "EXCEEDS_EXPECTATIONS" as TargetRating,
             label: "Exceeds Expectations",
             description: "Consistently delivers exceptional results",
             colorClass: "green",
@@ -38,7 +43,7 @@ export function TargetSelector({ initialTarget }: TargetSelectorProps) {
             textColor: "text-green-600",
         },
         {
-            value: "MEETS_EXPECTATIONS" as Rating,
+            value: "MEETS_EXPECTATIONS" as TargetRating,
             label: "Meets Expectations",
             description: "Consistently meets all requirements",
             colorClass: "blue",
