@@ -110,9 +110,14 @@ async function generateNightlyInsights() {
                 .flatMap((ga) => ga.evidenceLogs)
                 .slice(0, 10);
 
-            const evidenceWithoutLinks = recentEvidence.filter(
-                (e) => !e.supportingLinks || e.supportingLinks.length === 0
-            );
+            const evidenceWithoutLinks = recentEvidence.filter((e) => {
+                try {
+                    const links = e.links ? JSON.parse(e.links) : [];
+                    return !links || links.length === 0;
+                } catch {
+                    return true;
+                }
+            });
 
             if (evidenceWithoutLinks.length > 5) {
                 insights.push(
@@ -121,7 +126,7 @@ async function generateNightlyInsights() {
             }
 
             const evidenceWithoutMetrics = recentEvidence.filter(
-                (e) => !e.metrics || Object.keys(e.metrics).length === 0
+                (e) => !/\d+/.test(e.text) // Check if text contains any numbers (metrics)
             );
 
             if (evidenceWithoutMetrics.length > 5) {
