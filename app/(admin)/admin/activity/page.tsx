@@ -7,7 +7,7 @@ import { Activity, User, Target, Users, Award } from "lucide-react";
 export default async function ActivityPage() {
     const auditLogs = await prisma.auditLog.findMany({
         include: {
-            actorUser: true,
+            actor: true,
         },
         orderBy: { createdAt: "desc" },
         take: 100,
@@ -87,7 +87,7 @@ export default async function ActivityPage() {
 
                                         <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                                             <span>
-                                                by <strong>{log.actorUser?.name || "System"}</strong>
+                                                by <strong>{log.actor?.name || "System"}</strong>
                                             </span>
                                             <span>{formatDate(log.createdAt)}</span>
                                         </div>
