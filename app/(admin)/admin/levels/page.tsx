@@ -3,7 +3,7 @@ import { LevelsClient } from "./levels-client";
 
 export default async function LevelsPage() {
     const frameworks = await prisma.levelFramework.findMany({
-        orderBy: [{ role: "asc" }, { minTenureMonths: "asc" }],
+        orderBy: [{ role: "asc" }, { levelName: "asc" }],
     });
 
     // Get unique roles
