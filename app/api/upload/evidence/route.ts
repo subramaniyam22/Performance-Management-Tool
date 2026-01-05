@@ -72,11 +72,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Update evidence with attachment URL
-        const currentAttachments = evidence.attachmentUrls || [];
+        const currentAttachments = (evidence.attachmentsJson as string[] | null) || [];
         await prisma.evidenceLog.update({
             where: { id: evidenceId },
             data: {
-                attachmentUrls: [...currentAttachments, uploadResult.url],
+                attachmentsJson: [...currentAttachments, uploadResult.url],
             },
         });
 
